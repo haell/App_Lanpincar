@@ -1,0 +1,20 @@
+/* ... mantenha todos os estilos da versão anterior ... */
+
+.extra-logo.placeholder, .header-logo.placeholder, .button-card.placeholder {
+  width: 80px;
+  height: 80px;
+  background:#ccc;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  font-weight:bold;
+  color:#333;
+}
+
+.edit-button {
+  background:#555 !important;
+}
+
+.edit-button:hover {
+  background:#333 !important;
+}
