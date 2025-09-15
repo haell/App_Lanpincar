@@ -53,6 +53,8 @@ export default function Dashboard({ settings }) {
           <div className="text-sm text-gray-500">Valor total (R$)</div>
           <div className="text-xl font-bold">R$ {(overview.soma||0).toFixed(2)}</div>
         </div>
+        <Link to="/extra">Nova Extra</Link>
+
       </div>
 
       <div className="bg-white p-4 rounded shadow">
