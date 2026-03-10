@@ -1,9 +1,9 @@
 import { useStore } from "@/lib/store";
 import { useRoute } from "wouter";
 import { Button } from "@/components/ui/button";
-import { Printer, Share2, ChevronLeft, ArrowLeft } from "lucide-react";
+import { Printer, Share2, ChevronLeft, ArrowLeft, Edit2 } from "lucide-react";
 import { Link } from "wouter";
-import { useRef } from "react";
+import { useRef, useState } from "react";
 import jsPDF from "jspdf";
 import html2canvas from "html2canvas";
 
@@ -11,6 +11,7 @@ export default function OrderView() {
   const [, params] = useRoute("/orders/:id");
   const [, paramsPrint] = useRoute("/orders/:id/print");
   const orderId = params?.id || paramsPrint?.id;
+  const [isEditing, setIsEditing] = useState(false);
   
   const { orders, customers, settings } = useStore();
   const printRef = useRef<HTMLDivElement>(null);
@@ -50,12 +51,16 @@ export default function OrderView() {
         <Link href="/" className="inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 border border-input bg-background hover:bg-accent hover:text-accent-foreground h-9 rounded-md px-3 gap-2">
           <ArrowLeft className="w-4 h-4" /> Voltar
         </Link>
-        <div className="space-x-3">
+        <div className="space-x-2 flex items-center">
+          <Button variant="ghost" size="sm" onClick={() => setIsEditing(!isEditing)} className="gap-2 text-slate-600 hover:text-primary">
+            <Edit2 className="w-4 h-4" /> {isEditing ? "Pronto" : "Editar"}
+          </Button>
+          <div className="w-px h-6 bg-slate-200"></div>
           <Button variant="outline" onClick={handleDownloadPDF} className="gap-2 border-primary text-primary hover:bg-primary/5">
             <Share2 className="w-4 h-4" /> Exportar PDF
           </Button>
           <Button onClick={handlePrint} className="gap-2">
-            <Printer className="w-4 h-4" /> Imprimir O.S.
+            <Printer className="w-4 h-4" /> Imprimir
           </Button>
         </div>
       </div>
@@ -175,6 +180,12 @@ export default function OrderView() {
                 <td colSpan={4} className="border border-slate-300 p-2 text-right font-bold text-slate-700">VALOR TOTAL:</td>
                 <td className="border border-slate-300 p-2 text-right font-black text-lg">{formatMoney(order.payment.total)}</td>
               </tr>
+              {order.items.reduce((acc, item) => acc + item.discount, 0) > 0 && (
+                <tr>
+                  <td colSpan={4} className="border border-slate-300 p-2 text-right text-xs text-red-600 font-semibold">Desconto Total:</td>
+                  <td className="border border-slate-300 p-2 text-right text-xs font-bold text-red-600">-{formatMoney(order.items.reduce((acc, item) => acc + item.discount, 0))}</td>
+                </tr>
+              )}
             </tfoot>
           </table>
         </div>

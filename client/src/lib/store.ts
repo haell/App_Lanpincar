@@ -38,6 +38,7 @@ export interface OrderItem {
   type: 'peca' | 'servico';
   quantity: number;
   unitPrice: number;
+  discount: number; // In percent or absolute value
   total: number;
 }
 
@@ -64,7 +65,8 @@ export interface Order {
   items: OrderItem[];
   payment: {
     method: string;
-    type: 'vista' | 'prazo';
+    type: 'vista' | 'prazo' | 'parceladaComEntrada' | 'parceladaSemEntrada';
+    installments?: number; // Number of installments
     total: number;
     notes?: string;
   };

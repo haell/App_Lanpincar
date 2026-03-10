@@ -64,6 +64,7 @@ export default function NewOrder() {
       type: "servico",
       quantity: 1,
       unitPrice: 0,
+      discount: 0,
       total: 0
     }]);
   };
@@ -84,8 +85,9 @@ export default function NewOrder() {
         }
         
         // Recalculate total
-        if (field === 'quantity' || field === 'unitPrice' || field === 'serviceId') {
-          updated.total = updated.quantity * updated.unitPrice;
+        if (field === 'quantity' || field === 'unitPrice' || field === 'serviceId' || field === 'discount') {
+          const subtotal = updated.quantity * updated.unitPrice;
+          updated.total = subtotal - updated.discount;
         }
         
         return updated;
@@ -100,8 +102,13 @@ export default function NewOrder() {
 
   const handleSaveOrder = () => {
     // Validate
-    if (!customerForm.name || !customerForm.document) {
-      toast({ title: "Erro", description: "Nome e documento do cliente são obrigatórios.", variant: "destructive" });
+    if (!customerForm.name || !customerForm.document || customerForm.document.length !== 11) {
+      toast({ title: "Erro", description: "Nome e CPF (11 dígitos) do cliente são obrigatórios.", variant: "destructive" });
+      setStep(1);
+      return;
+    }
+    if (!customerForm.email || !customerForm.email.includes('@')) {
+      toast({ title: "Erro", description: "E-mail válido é obrigatório.", variant: "destructive" });
       setStep(1);
       return;
     }
@@ -219,8 +226,11 @@ export default function NewOrder() {
                 <Input id="c-name" value={customerForm.name} onChange={e => setCustomerForm({...customerForm, name: e.target.value})} />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="c-doc">CPF/CNPJ *</Label>
-                <Input id="c-doc" value={customerForm.document} onChange={e => setCustomerForm({...customerForm, document: e.target.value})} />
+                <Label htmlFor="c-doc">CPF (11 dígitos) *</Label>
+                <Input id="c-doc" value={customerForm.document} maxLength={11} onChange={e => {
+                  const val = e.target.value.replace(/\D/g, '');
+                  setCustomerForm({...customerForm, document: val});
+                }} placeholder="00000000000" />
               </div>
               <div className="space-y-2 md:col-span-2">
                 <Label htmlFor="c-addr">Endereço Completo</Label>
@@ -231,8 +241,8 @@ export default function NewOrder() {
                 <Input id="c-wpp" value={customerForm.whatsapp} onChange={e => setCustomerForm({...customerForm, whatsapp: e.target.value})} />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="c-email">E-mail</Label>
-                <Input id="c-email" type="email" value={customerForm.email} onChange={e => setCustomerForm({...customerForm, email: e.target.value})} />
+                <Label htmlFor="c-email">E-mail *</Label>
+                <Input id="c-email" type="email" value={customerForm.email} onChange={e => setCustomerForm({...customerForm, email: e.target.value})} required />
               </div>
             </div>
           </div>
@@ -291,7 +301,7 @@ export default function NewOrder() {
             </div>
 
             <div className="mt-8 border-t pt-6 grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div className="space-y-2">
+              <div className="space-y-3">
                 <Label>Condição dos Pneus</Label>
                 <Select value={vehicleForm.tires} onValueChange={v => setVehicleForm({...vehicleForm, tires: v as any})}>
                   <SelectTrigger><SelectValue /></SelectTrigger>
@@ -302,7 +312,7 @@ export default function NewOrder() {
                   </SelectContent>
                 </Select>
               </div>
-              <div className="space-y-2">
+              <div className="space-y-3">
                 <Label>Nível de Combustível</Label>
                 <Select value={vehicleForm.fuelLevel} onValueChange={v => setVehicleForm({...vehicleForm, fuelLevel: v as any})}>
                   <SelectTrigger><SelectValue /></SelectTrigger>
@@ -335,12 +345,13 @@ export default function NewOrder() {
               <table className="w-full text-sm text-left">
                 <thead className="bg-slate-100 text-slate-600 uppercase text-xs">
                   <tr>
-                    <th className="px-4 py-3">Tipo</th>
-                    <th className="px-4 py-3 min-w-[200px]">Descrição do Item (Tabela)</th>
-                    <th className="px-4 py-3 w-24">Qtd</th>
-                    <th className="px-4 py-3 w-32">Valor Unit.</th>
-                    <th className="px-4 py-3 w-32 text-right">Total</th>
-                    <th className="px-4 py-3 w-12"></th>
+                    <th className="px-2 py-3 text-xs">Tipo</th>
+                    <th className="px-2 py-3 text-xs">Descrição</th>
+                    <th className="px-2 py-3 text-xs text-center">Qtd</th>
+                    <th className="px-2 py-3 text-xs text-right">Valor</th>
+                    <th className="px-2 py-3 text-xs text-right">Desc.</th>
+                    <th className="px-2 py-3 text-xs text-right">Total</th>
+                    <th className="px-2 py-3 w-8"></th>
                   </tr>
                 </thead>
                 <tbody>
@@ -352,47 +363,50 @@ export default function NewOrder() {
                     </tr>
                   ) : (
                     items.map((item, idx) => (
-                      <tr key={item.id} className="border-b bg-white hover:bg-slate-50">
-                        <td className="px-4 py-2">
+                      <tr key={item.id} className="border-b bg-white hover:bg-slate-50 text-sm">
+                        <td className="px-2 py-2 min-w-max">
                           <Select value={item.type} onValueChange={v => handleUpdateItem(item.id, 'type', v)}>
-                            <SelectTrigger className="h-8"><SelectValue /></SelectTrigger>
+                            <SelectTrigger className="h-7 text-xs"><SelectValue /></SelectTrigger>
                             <SelectContent>
                               <SelectItem value="servico">Serviço</SelectItem>
                               <SelectItem value="peca">Peça</SelectItem>
                             </SelectContent>
                           </Select>
                         </td>
-                        <td className="px-4 py-2">
+                        <td className="px-2 py-2 min-w-[150px]">
                           <Select value={item.serviceId || "custom"} onValueChange={v => {
                             if (v !== "custom") handleUpdateItem(item.id, 'serviceId', v);
                           }}>
-                            <SelectTrigger className="h-8 mb-1"><SelectValue placeholder="Selecione da tabela..." /></SelectTrigger>
+                            <SelectTrigger className="h-7 mb-1 text-xs"><SelectValue placeholder="Selecione..." /></SelectTrigger>
                             <SelectContent>
-                              <SelectItem value="custom">-- Item Manual --</SelectItem>
+                              <SelectItem value="custom">-- Manual --</SelectItem>
                               {services.filter(s => s.type === item.type).map(s => (
-                                <SelectItem key={s.id} value={s.id}>{s.name} - R$ {s.defaultPrice}</SelectItem>
+                                <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>
                               ))}
                             </SelectContent>
                           </Select>
                           <Input 
                             value={item.name} 
                             onChange={e => handleUpdateItem(item.id, 'name', e.target.value)}
-                            placeholder="Ou digite a descrição..."
-                            className="h-8 text-xs"
+                            placeholder="Descrição..."
+                            className="h-7 text-xs"
                           />
                         </td>
-                        <td className="px-4 py-2">
-                          <Input type="number" min="1" value={item.quantity} onChange={e => handleUpdateItem(item.id, 'quantity', parseFloat(e.target.value)||0)} className="h-8" />
+                        <td className="px-2 py-2 w-12">
+                          <Input type="number" min="1" value={item.quantity} onChange={e => handleUpdateItem(item.id, 'quantity', parseFloat(e.target.value)||0)} className="h-7 text-xs text-center" />
                         </td>
-                        <td className="px-4 py-2">
-                          <Input type="number" step="0.01" value={item.unitPrice} onChange={e => handleUpdateItem(item.id, 'unitPrice', parseFloat(e.target.value)||0)} className="h-8" />
+                        <td className="px-2 py-2 w-20">
+                          <Input type="number" step="0.01" value={item.unitPrice} onChange={e => handleUpdateItem(item.id, 'unitPrice', parseFloat(e.target.value)||0)} className="h-7 text-xs text-right" />
                         </td>
-                        <td className="px-4 py-2 text-right font-medium">
+                        <td className="px-2 py-2 w-16">
+                          <Input type="number" step="0.01" value={item.discount} onChange={e => handleUpdateItem(item.id, 'discount', parseFloat(e.target.value)||0)} className="h-7 text-xs text-right" placeholder="0" />
+                        </td>
+                        <td className="px-2 py-2 w-20 text-right font-medium text-xs">
                           R$ {item.total.toFixed(2)}
                         </td>
-                        <td className="px-4 py-2">
-                          <Button variant="ghost" size="icon" className="h-8 w-8 text-red-500 hover:bg-red-50" onClick={() => handleRemoveItem(item.id)}>
-                            <Trash2 className="w-4 h-4" />
+                        <td className="px-2 py-2">
+                          <Button variant="ghost" size="icon" className="h-7 w-7 text-red-500 hover:bg-red-50" onClick={() => handleRemoveItem(item.id)}>
+                            <Trash2 className="w-3 h-3" />
                           </Button>
                         </td>
                       </tr>
@@ -400,12 +414,19 @@ export default function NewOrder() {
                   )}
                 </tbody>
                 {items.length > 0 && (
-                  <tfoot className="bg-slate-100 font-bold">
+                  <tfoot className="bg-slate-100 font-bold text-sm">
                     <tr>
-                      <td colSpan={4} className="px-4 py-3 text-right">TOTAL GERAL:</td>
-                      <td className="px-4 py-3 text-right text-primary text-lg">R$ {subtotal.toFixed(2)}</td>
+                      <td colSpan={5} className="px-2 py-2 text-right">TOTAL:</td>
+                      <td className="px-2 py-2 text-right text-primary text-base">R$ {subtotal.toFixed(2)}</td>
                       <td></td>
                     </tr>
+                    {items.reduce((acc, item) => acc + item.discount, 0) > 0 && (
+                      <tr className="bg-red-50">
+                        <td colSpan={5} className="px-2 py-1 text-right text-xs text-red-600">Desconto Total:</td>
+                        <td className="px-2 py-1 text-right text-xs font-bold text-red-600">-R$ {items.reduce((acc, item) => acc + item.discount, 0).toFixed(2)}</td>
+                        <td></td>
+                      </tr>
+                    )}
                   </tfoot>
                 )}
               </table>
@@ -421,7 +442,9 @@ export default function NewOrder() {
                       <SelectTrigger><SelectValue /></SelectTrigger>
                       <SelectContent>
                         <SelectItem value="vista">À Vista</SelectItem>
-                        <SelectItem value="prazo">A Prazo/Parcelado</SelectItem>
+                        <SelectItem value="prazo">A Prazo</SelectItem>
+                        <SelectItem value="parceladaComEntrada">Parcelado Com Entrada</SelectItem>
+                        <SelectItem value="parceladaSemEntrada">Parcelado Sem Entrada</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>

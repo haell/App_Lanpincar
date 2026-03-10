@@ -1,17 +1,18 @@
 import { useStore } from "@/lib/store";
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/hooks/use-toast";
-import { Save, Image as ImageIcon } from "lucide-react";
+import { Save, Image as ImageIcon, X } from "lucide-react";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 
 export default function Settings() {
   const { settings, updateSettings } = useStore();
   const { toast } = useToast();
+  const fileInputRef = useRef<HTMLInputElement>(null);
   
   const [formData, setFormData] = useState({
     name: settings.name || "",
@@ -24,6 +25,22 @@ export default function Settings() {
 
   const [methods, setMethods] = useState(settings.paymentMethods.join(", "));
   const [logoUrl, setLogoUrl] = useState(settings.logo || "");
+
+  const handleLogoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        const dataUrl = event.target?.result as string;
+        setLogoUrl(dataUrl);
+        toast({
+          title: "Logo carregada!",
+          description: "A imagem será salva quando você clicar em 'Salvar Alterações'."
+        });
+      };
+      reader.readAsDataURL(file);
+    }
+  };
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
@@ -110,27 +127,53 @@ export default function Settings() {
           <Card>
             <CardHeader>
               <CardTitle>Logotipo</CardTitle>
-              <CardDescription>URL da imagem (recomenda-se fundo branco)</CardDescription>
+              <CardDescription>Upload local ou URL externa</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
-              <div className="flex justify-center p-4 border-2 border-dashed rounded-lg bg-slate-50">
+              <div 
+                className="flex justify-center p-4 border-2 border-dashed rounded-lg bg-slate-50 cursor-pointer hover:bg-slate-100 transition-colors"
+                onClick={() => fileInputRef.current?.click()}
+              >
                 {logoUrl ? (
-                  <img src={logoUrl} alt="Logo" className="max-h-24 object-contain" />
+                  <div className="text-center">
+                    <img src={logoUrl} alt="Logo" className="max-h-24 object-contain mx-auto mb-2" />
+                    <p className="text-xs text-slate-500">Clique para trocar a imagem</p>
+                  </div>
                 ) : (
                   <div className="text-center text-slate-400 py-4">
                     <ImageIcon className="w-8 h-8 mx-auto mb-2 opacity-50" />
-                    <span className="text-sm">Sem logo definido</span>
+                    <span className="text-sm">Clique para fazer upload ou arraste uma imagem</span>
                   </div>
                 )}
               </div>
+              <input 
+                ref={fileInputRef}
+                type="file" 
+                accept="image/*" 
+                onChange={handleLogoUpload} 
+                className="hidden" 
+              />
+              
               <div className="space-y-2">
-                <Label htmlFor="logo">URL da Imagem</Label>
-                <Input 
-                  id="logo" 
-                  value={logoUrl} 
-                  onChange={(e) => setLogoUrl(e.target.value)} 
-                  placeholder="https://exemplo.com/logo.png" 
-                />
+                <Label htmlFor="logo">Ou Cole URL da Imagem</Label>
+                <div className="flex gap-2">
+                  <Input 
+                    id="logo" 
+                    value={logoUrl} 
+                    onChange={(e) => setLogoUrl(e.target.value)} 
+                    placeholder="https://exemplo.com/logo.png" 
+                  />
+                  {logoUrl && (
+                    <Button 
+                      variant="outline" 
+                      size="sm"
+                      onClick={() => setLogoUrl("")}
+                      className="px-3 text-red-500 hover:text-red-700 hover:bg-red-50"
+                    >
+                      <X className="w-4 h-4" />
+                    </Button>
+                  )}
+                </div>
               </div>
             </CardContent>
           </Card>
