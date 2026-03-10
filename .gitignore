@@ -52,3 +52,6 @@ uploads/
 # arquivos gerados pelo PWA/service worker futuramente
 sw.js
 workbox-*.js
+
+.local/
+.replit
