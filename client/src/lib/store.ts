@@ -1,6 +1,7 @@
 // A simple local-first datastore using localStorage
-import { create } from 'zustand';
-import { persist } from 'zustand/middleware';
+import { create } from "zustand";
+import { persist, createJSONStorage } from "zustand/middleware";
+import { indexedDbStorage } from "./indexedDbStorage";
 
 export interface ShopSettings {
   name: string;
@@ -167,7 +168,8 @@ export const useStore = create<AppState>()(
         })),
     }),
     {
-      name: 'oficina-storage',
+      name: "oficina-storage",
+      storage: createJSONStorage(() => indexedDbStorage),
     }
   )
 );
